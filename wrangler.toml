@@ -1,0 +1,12 @@
+name = "aicard"
+main = "src/index.ts"
+compatibility_date = "2026-07-25"
+
+[ai]
+binding = "AI"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aicard-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
