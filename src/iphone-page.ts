@@ -1,0 +1,82 @@
+export const iphonePage = `<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>iPhone 收集端｜AICARD</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb;line-height:1.55}
+    *{box-sizing:border-box}body{margin:0}.wrap{max-width:760px;margin:auto;padding:18px 16px 96px}
+    .bar{position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;padding:12px 0;background:rgba(245,247,251,.94);backdrop-filter:blur(14px)}
+    h1{font-size:28px;margin:14px 0 4px}h2{font-size:20px;margin:0 0 8px}h3{font-size:16px;margin:18px 0 6px}
+    .muted{color:#64748b}.panel{background:#fff;border:1px solid #e2e8f0;border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 8px 28px rgba(15,23,42,.045)}
+    .btn{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:12px;padding:11px 15px;font:inherit;font-weight:750;text-decoration:none;cursor:pointer}
+    .primary{background:#111827;color:#fff}.secondary{background:#e8edf5;color:#172033}.copy{background:#eef2ff;color:#3730a3}
+    label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}textarea,input,select{width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:12px;font:inherit;background:#fff}
+    textarea{min-height:130px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.step{display:flex;gap:12px;margin:14px 0}.num{flex:0 0 28px;height:28px;border-radius:50%;background:#111827;color:#fff;text-align:center;line-height:28px;font-weight:800}
+    code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f1f5f9;padding:2px 5px;border-radius:6px;overflow-wrap:anywhere}
+    .ok{color:#166534}.error{color:#991b1b}.result{display:none;margin-top:12px;padding:12px;border-radius:11px;background:#f8fafc}.note{border-left:3px solid #6366f1;padding-left:12px}
+  </style>
+</head>
+<body><main class="wrap">
+  <nav class="bar"><strong>AICARD · iPhone</strong><a class="btn secondary" href="/">返回卡片庫</a></nav>
+  <h1>觀看社群時，一鍵收集</h1>
+  <p class="muted">支援「分享表單」與「背面輕點截圖 OCR」。只傳文字、網址與備註到 AICARD，不上傳截圖。</p>
+
+  <section class="panel">
+    <h2>先測試收集端</h2>
+    <label for="text">貼文文字或 OCR 文字</label>
+    <textarea id="text" placeholder="貼上剛看到的社群內容…"></textarea>
+    <label for="url">來源網址（可留空）</label>
+    <input id="url" type="url" inputmode="url" placeholder="https://…">
+    <label for="platform">來源平台</label>
+    <select id="platform"><option value="">自動判斷</option><option>Facebook</option><option>Threads</option><option>LINE</option><option>Instagram</option><option>YouTube</option><option>其他</option></select>
+    <label for="note">為什麼重要（可留空）</label>
+    <input id="note" maxlength="1000" placeholder="一句話即可">
+    <div class="actions"><button id="send" class="btn primary">收進 AICARD</button></div>
+    <div id="result" class="result"></div>
+  </section>
+
+  <section class="panel">
+    <h2>捷徑 A：社群的分享按鈕</h2>
+    <div class="step"><span class="num">1</span><div>在「捷徑」新增 <strong>AICARD 收藏</strong>，開啟「在分享表單中顯示」，接受<strong>文字與 URL</strong>。</div></div>
+    <div class="step"><span class="num">2</span><div>加入「詢問輸入」，提示文字填入「為什麼重要？（可略過）」。</div></div>
+    <div class="step"><span class="num">3</span><div>加入「取得 URL 的內容」，網址使用下面端點，方法選 <strong>POST</strong>，要求本文選 <strong>JSON</strong>。</div></div>
+    <div class="actions"><button class="btn copy" data-copy="/api/capture">複製 API 端點</button></div>
+    <h3>JSON 欄位</h3>
+    <p><code>text</code>＝捷徑輸入、<code>url</code>＝從捷徑輸入取得的 URL、<code>note</code>＝詢問結果、<code>capture_method</code>＝<code>share_sheet</code>。</p>
+    <div class="step"><span class="num">4</span><div>加入「顯示通知」，內容使用 API 回傳的 <code>title</code>。之後在 Facebook、Threads、Safari 等 App 點「分享」即可收集。</div></div>
+  </section>
+
+  <section class="panel">
+    <h2>捷徑 B：背面輕點截圖 OCR</h2>
+    <div class="step"><span class="num">1</span><div>新增 <strong>AICARD 截圖收集</strong>：依序加入「拍攝截圖」→「從影像擷取文字」→「詢問輸入」。</div></div>
+    <div class="step"><span class="num">2</span><div>以同一 API 端點 POST JSON：<code>ocr_text</code>＝擷取的文字、<code>note</code>＝詢問結果、<code>capture_method</code>＝<code>back_tap</code>。</div></div>
+    <div class="step"><span class="num">3</span><div>到 iPhone「設定 → 輔助使用 → 觸控 → 背面輕點」，把點兩下或三下指定給這個捷徑。</div></div>
+    <p class="note">某些社群不會把完整文字交給分享表單，此時用截圖 OCR。AICARD 只保存辨識後文字，截圖仍留在手機端。</p>
+  </section>
+</main>
+<script>
+const result=document.getElementById('result');
+document.querySelectorAll('[data-copy]').forEach(button=>button.addEventListener('click',async()=>{
+  const endpoint=location.origin+button.dataset.copy;
+  await navigator.clipboard.writeText(endpoint);
+  button.textContent='已複製';
+}));
+document.getElementById('send').addEventListener('click',async()=>{
+  const button=document.getElementById('send');
+  const body={text:document.getElementById('text').value.trim(),url:document.getElementById('url').value.trim(),platform:document.getElementById('platform').value,note:document.getElementById('note').value.trim(),capture_method:'iphone_web'};
+  button.disabled=true;button.textContent='收集中…';result.style.display='block';result.className='result';result.textContent='正在送出';
+  try{
+    const response=await fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
+    const data=await response.json();
+    if(!response.ok)throw new Error(data.error||'收集失敗');
+    result.className='result ok';
+    result.innerHTML='已收進：<strong></strong> · <a href="'+encodeURI(data.card_url)+'">查看卡片</a>';
+    result.querySelector('strong').textContent=data.title;
+    document.getElementById('text').value='';document.getElementById('url').value='';document.getElementById('note').value='';
+  }catch(error){result.className='result error';result.textContent=error instanceof Error?error.message:'收集失敗'}
+  finally{button.disabled=false;button.textContent='收進 AICARD'}
+});
+</script></body></html>`;

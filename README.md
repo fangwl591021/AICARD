@@ -19,6 +19,8 @@ AICARD 是一個部署在 Cloudflare Workers 的卡片式情報、人物與商�
 - D1 資料持久化
 - Workers AI 分類別分析提示
 - 手機響應式 Web 介面
+- iPhone 分享表單收集端
+- iPhone 背面輕點、截圖與裝置端 OCR 收集流程
 - 健康檢查 API
 - GitHub Actions 自動部署至 Cloudflare Workers
 
@@ -37,6 +39,7 @@ AICARD 是一個部署在 Cloudflare Workers 的卡片式情報、人物與商�
 | GET | `/api/health` | 健康檢查 |
 | GET | `/api/cards` | 卡片列表、搜尋與篩選 |
 | POST | `/api/cards` | 建立卡片 |
+| POST | `/api/capture` | iPhone 分享表單／OCR 快速收集 |
 | GET | `/api/cards/:id` | 取得單一卡片 |
 | PATCH | `/api/cards/:id` | 更新狀態、標題或重要原因 |
 | DELETE | `/api/cards/:id` | 刪除卡片 |
@@ -112,13 +115,14 @@ curl https://你的-worker.workers.dev/api/health
 預期結果：
 
 ```json
-{"ok":true,"service":"AICARD","version":"0.2.0"}
+{"ok":true,"service":"AICARD","version":"0.3.0"}
 ```
 
 ## 專案結構
 
 ```text
-src/index.ts                  Worker API 與 Web 介面
+src/index.ts                  Worker API 與卡片 Web 介面
+src/iphone-page.ts            iPhone 收集端與捷徑設定頁
 migrations/0001_init.sql      D1 資料表
 wrangler.toml                 Cloudflare 綁定設定
 package.json                  開發與部署指令
@@ -129,9 +133,9 @@ package.json                  開發與部署指令
 
 - 多使用者登入與資料隔離
 - 團隊權限
-- 圖片上傳與 OCR
+- 雲端圖片上傳（OCR 在 iPhone 裝置端完成）
 - LIFF 名片交換
-- iOS／Android 畫面收集端
+- Android 畫面收集端
 - 自動私訊或自動成交
 
 這些功能應在核心收藏與深度分析流程驗證後，再逐步加入。
