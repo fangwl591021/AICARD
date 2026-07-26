@@ -20,6 +20,7 @@ AICARD 是一個部署在 Cloudflare Workers 的卡片式情報、人物與商�
 - Workers AI 分類別分析提示
 - 手機響應式 Web 介面
 - 健康檢查 API
+- GitHub Actions 自動部署至 Cloudflare Workers
 
 ## 技術架構
 
@@ -55,7 +56,7 @@ npx wrangler login
 npx wrangler d1 create aicard-db
 ```
 
-將 Cloudflare 回傳的 `database_id` 填入 `wrangler.toml`：
+Cloudflare 會回傳 D1 的 `database_id`。本機手動部署時，請將它填入 `wrangler.toml`：
 
 ```toml
 [[d1_databases]]
@@ -72,13 +73,37 @@ npm run db:migrate:local
 npm run dev
 ```
 
-## 正式部署
+## 手動正式部署
 
 ```bash
 npm run typecheck
 npm run db:migrate:remote
 npm run deploy
 ```
+
+## GitHub 自動部署
+
+專案已包含 `.github/workflows/deploy.yml`。推送到 `main` 分支，或在 GitHub Actions 手動執行 `Deploy AICARD`，即會：
+
+1. 安裝依賴
+2. 執行 TypeScript 型別檢查
+3. 將 D1 Database ID 寫入暫存的 `wrangler.toml`
+4. 套用遠端 D1 migrations
+5. 部署 Cloudflare Worker
+
+請在 GitHub Repository：
+
+`Settings → Secrets and variables → Actions → New repository secret`
+
+加入以下三個 secrets：
+
+| Secret | 說明 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | 具備 Workers 部署及 D1 編輯權限的 Cloudflare API Token |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
+| `D1_DATABASE_ID` | `aicard-db` 的 Database ID |
+
+未設定上述 secrets 時，自動部署會明確失敗並顯示缺少哪一項，不會產生不完整部署。
 
 部署完成後測試：
 
@@ -95,10 +120,11 @@ curl https://你的-worker.workers.dev/api/health
 ## 專案結構
 
 ```text
-src/index.ts               Worker API 與 Web 介面
-migrations/0001_init.sql   D1 資料表
-wrangler.toml              Cloudflare 綁定設定
-package.json               開發與部署指令
+src/index.ts                  Worker API 與 Web 介面
+migrations/0001_init.sql      D1 資料表
+wrangler.toml                 Cloudflare 綁定設定
+package.json                  開發與部署指令
+.github/workflows/deploy.yml  GitHub 自動部署
 ```
 
 ## 第一版刻意不包含
