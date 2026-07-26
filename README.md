@@ -14,6 +14,10 @@ AICARD 是一個部署在 Cloudflare Workers 的卡片式情報、人物與商�
 - 關鍵字搜尋
 - 分類與狀態篩選
 - 收件匣、跟進中、已完成、已封存
+- 社群貼文式卡片、長文繼續閱讀與獨立收合
+- AI 分析預設收合，完成後自動展開
+- 行銷文與技術文使用不同研究框架
+- 一抄、二改、三創新與最小可行驗證
 - 深度分析與重新分析
 - 刪除卡片
 - D1 資料持久化
@@ -116,7 +120,7 @@ curl https://你的-worker.workers.dev/api/health
 預期結果：
 
 ```json
-{"ok":true,"service":"AICARD","version":"0.5.1"}
+{"ok":true,"service":"AICARD","version":"0.7.0"}
 ```
 
 ## 專案結構
@@ -136,7 +140,6 @@ package.json                  開發與部署指令
 - 團隊權限
 - 雲端圖片上傳（OCR 在 iPhone 裝置端完成）
 - LIFF 名片交換
-- Android 畫面收集端
 - 自動私訊或自動成交
 
 這些功能應在核心收藏與深度分析流程驗證後，再逐步加入。
