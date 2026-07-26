@@ -16,7 +16,7 @@ export const iphonePage = `<!doctype html>
     label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}textarea,input,select{width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:12px;font:inherit;background:#fff}
     textarea{min-height:130px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.step{display:flex;gap:12px;margin:14px 0}.num{flex:0 0 28px;height:28px;border-radius:50%;background:#111827;color:#fff;text-align:center;line-height:28px;font-weight:800}
     code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f1f5f9;padding:2px 5px;border-radius:6px;overflow-wrap:anywhere}
-    .ok{color:#166534}.error{color:#991b1b}.result{display:none;margin-top:12px;padding:12px;border-radius:11px;background:#f8fafc}.note{border-left:3px solid #6366f1;padding-left:12px}
+    .ok{color:#166534}.error{color:#991b1b}.result{display:none;margin-top:12px;padding:12px;border-radius:11px;background:#f8fafc}.note{border-left:3px solid #6366f1;padding-left:12px}.endpoint{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f8fafc}.feedback{min-height:24px;margin-top:8px;font-size:14px}
   </style>
 </head>
 <body><main class="wrap">
@@ -43,7 +43,10 @@ export const iphonePage = `<!doctype html>
     <div class="step"><span class="num">1</span><div>在「捷徑」新增 <strong>AICARD 收藏</strong>，開啟「在分享表單中顯示」，接受<strong>文字與 URL</strong>。</div></div>
     <div class="step"><span class="num">2</span><div>加入「詢問輸入」，提示文字填入「為什麼重要？（可略過）」。</div></div>
     <div class="step"><span class="num">3</span><div>加入「取得 URL 的內容」，網址使用下面端點，方法選 <strong>POST</strong>，要求本文選 <strong>JSON</strong>。</div></div>
-    <div class="actions"><button class="btn copy" data-copy="/api/capture">複製 API 端點</button></div>
+    <label for="endpoint">API 端點</label>
+    <input id="endpoint" class="endpoint" readonly>
+    <div class="actions"><button type="button" class="btn copy" id="copyEndpoint">複製 API 端點</button><a class="btn primary" href="shortcuts://create-shortcut">打開捷徑並新增</a></div>
+    <div id="copyStatus" class="feedback" role="status" aria-live="polite"></div>
     <h3>JSON 欄位</h3>
     <p><code>text</code>＝捷徑輸入、<code>url</code>＝從捷徑輸入取得的 URL、<code>note</code>＝詢問結果、<code>capture_method</code>＝<code>share_sheet</code>。</p>
     <div class="step"><span class="num">4</span><div>加入「顯示通知」，內容使用 API 回傳的 <code>title</code>。之後在 Facebook、Threads、Safari 等 App 點「分享」即可收集。</div></div>
@@ -59,11 +62,29 @@ export const iphonePage = `<!doctype html>
 </main>
 <script>
 const result=document.getElementById('result');
-document.querySelectorAll('[data-copy]').forEach(button=>button.addEventListener('click',async()=>{
-  const endpoint=location.origin+button.dataset.copy;
-  await navigator.clipboard.writeText(endpoint);
-  button.textContent='已複製';
-}));
+const endpointField=document.getElementById('endpoint');
+const copyStatus=document.getElementById('copyStatus');
+endpointField.value=location.origin+'/api/capture';
+document.getElementById('copyEndpoint').addEventListener('click',async event=>{
+  const button=event.currentTarget;
+  copyStatus.className='feedback';
+  copyStatus.textContent='正在複製…';
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(endpointField.value);
+    }else{
+      endpointField.focus();endpointField.select();
+      if(!document.execCommand('copy'))throw new Error('copy unavailable');
+    }
+    button.textContent='已複製';
+    copyStatus.className='feedback ok';
+    copyStatus.textContent='已複製，可以回到捷徑貼上。';
+  }catch{
+    endpointField.focus();endpointField.select();
+    copyStatus.className='feedback error';
+    copyStatus.textContent='iPhone 未允許自動複製，網址已反白；請長按後選「拷貝」。';
+  }
+});
 document.getElementById('send').addEventListener('click',async()=>{
   const button=document.getElementById('send');
   const body={text:document.getElementById('text').value.trim(),url:document.getElementById('url').value.trim(),platform:document.getElementById('platform').value,note:document.getElementById('note').value.trim(),capture_method:'iphone_web'};
