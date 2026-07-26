@@ -7,7 +7,7 @@ interface Env {
 
 type CardType = 'person' | 'opportunity' | 'intelligence' | 'idea';
 type CardStatus = 'inbox' | 'following' | 'done' | 'archived';
-type CaptureMethod = 'share_sheet' | 'screenshot_ocr' | 'back_tap' | 'iphone_web';
+type CaptureMethod = 'share_sheet' | 'screenshot_ocr' | 'back_tap' | 'iphone_web' | 'android_floating';
 type ContentKind = 'marketing' | 'technology' | 'person' | 'opportunity' | 'idea' | 'general';
 
 type CardInput = {
@@ -31,7 +31,7 @@ type CaptureInput = {
 
 const TYPES: CardType[] = ['person', 'opportunity', 'intelligence', 'idea'];
 const STATUSES: CardStatus[] = ['inbox', 'following', 'done', 'archived'];
-const CAPTURE_METHODS: CaptureMethod[] = ['share_sheet', 'screenshot_ocr', 'back_tap', 'iphone_web'];
+const CAPTURE_METHODS: CaptureMethod[] = ['share_sheet', 'screenshot_ocr', 'back_tap', 'iphone_web', 'android_floating'];
 const LIMITS = { query: 200, title: 120, platform: 80, url: 2048, text: 20000, reason: 1000 } as const;
 const INPUT_KEYS = ['card_type', 'title', 'source_platform', 'source_url', 'source_text', 'importance_reason', 'status'] as const;
 const CAPTURE_KEYS = ['text', 'url', 'platform', 'note', 'capture_method', 'ocr_text'] as const;
@@ -230,7 +230,7 @@ async function createCapturedCard(env: Env, input: CaptureInput, origin: string)
   const type = inferType(combined);
   const title = inferTitle(text || sourceUrl);
   const platform = inferPlatform(platformInput, sourceUrl, text);
-  const tags = JSON.stringify(['iphone', method]);
+  const tags = JSON.stringify([method === 'android_floating' ? 'android' : 'iphone', method]);
 
   await env.DB.prepare(
     'INSERT INTO cards (id,card_type,title,summary,source_platform,source_url,source_text,ocr_text,importance_reason,tags,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
@@ -277,7 +277,7 @@ async function api(path,opt){const r=await fetch(path,opt);const d=await r.json(
 async function loadCards(){const q=new URLSearchParams();const search=document.getElementById('search').value.trim(),type=document.getElementById('filterType').value,status=document.getElementById('filterStatus').value;if(search)q.set('q',search);if(type)q.set('type',type);if(status)q.set('status',status);const root=document.getElementById('cards');root.innerHTML='<div class="panel empty">正在載入…</div>';try{const d=await api('/api/cards?'+q);renderStats(d.stats||{});renderCards(d.cards||[])}catch(e){root.innerHTML='<div class="panel empty">'+E(e.message)+'</div>'}}
 function renderStats(s){document.getElementById('stats').innerHTML=Object.keys(L).map(k=>'<div class="stat"><strong>'+(s[k]||0)+'</strong><span>'+I[k]+' '+L[k]+'</span></div>').join('')}
 function parseTags(value){try{const tags=JSON.parse(value||'[]');return Array.isArray(tags)?tags.filter(t=>typeof t==='string'):[]}catch{return[]}}
-function captureLabel(card){const tags=parseTags(card.tags);if(tags.includes('back_tap'))return'iPhone 浮球';if(tags.includes('screenshot_ocr'))return'iPhone 截圖';if(tags.includes('share_sheet'))return'iPhone 分享';if(tags.includes('iphone_web'))return'iPhone 網頁';return''}
+function captureLabel(card){const tags=parseTags(card.tags);if(tags.includes('android_floating'))return'Android 浮球';if(tags.includes('back_tap'))return'iPhone 浮球';if(tags.includes('screenshot_ocr'))return'iPhone 截圖';if(tags.includes('share_sheet'))return'iPhone 分享';if(tags.includes('iphone_web'))return'iPhone 網頁';return''}
 function statusOptions(card){return Object.keys(S).map(key=>'<option value="'+key+'" '+(card.status===key?'selected':'')+'>'+S[key]+'</option>').join('')}
 function analysisSections(value){const text=String(value||'').replace(/\\r/g,'').trim();if(!text)return'';const heading=/\\*{0,2}【([^】]+)】\\*{0,2}/g,sections=[];let match,lastTitle='',lastIndex=0;while((match=heading.exec(text))!==null){if(lastTitle)sections.push({title:lastTitle,content:text.slice(lastIndex,match.index).trim()});lastTitle=match[1].replace(/\\*\\*/g,'').trim();lastIndex=heading.lastIndex}if(lastTitle)sections.push({title:lastTitle,content:text.slice(lastIndex).trim()});if(!sections.length)sections.push({title:'分析結果',content:text});return'<div class="analysis-wrap"><h3>✦ 深度分析</h3><div class="analysis-grid">'+sections.map(section=>'<section class="analysis-section"><h4>'+E(section.title)+'</h4><div class="analysis-content">'+E(section.content.replace(/\\*\\*/g,'')).replace(/\\n/g,'<br>')+'</div></section>').join('')+'</div></div>'}
 function toggleCard(id){const card=document.getElementById('card-'+id);if(!card)return;card.classList.toggle('expanded');const button=card.querySelector('.card-toggle');if(button)button.setAttribute('aria-expanded',card.classList.contains('expanded')?'true':'false')}
@@ -318,7 +318,7 @@ export default {
           },
         });
       }
-      if (request.method === 'GET' && url.pathname === '/api/health') return json({ ok: true, service: 'AICARD', version: '0.5.0' });
+      if (request.method === 'GET' && url.pathname === '/api/health') return json({ ok: true, service: 'AICARD', version: '0.5.1' });
 
       if (request.method === 'POST' && url.pathname === '/api/capture') {
         let raw: unknown;
@@ -331,7 +331,29 @@ export default {
         if (invalid) return json({ error: invalid }, 400);
         return createCapturedCard(env, raw as CaptureInput, url.origin);
       }
-      if (url.pathname === '/api/capture') return json({ error: 'Method not allowed' }, 405);
+      if (request.method === 'POST' && url.pathname === '/api/capture/android') {
+        const contentLength = Number(request.headers.get('content-length') || 0);
+        if (Number.isFinite(contentLength) && contentLength > 100000) return json({ error: 'OCR 資料過大' }, 413);
+        let raw: unknown;
+        try {
+          raw = await request.json();
+        } catch {
+          return json({ error: '請傳送 MacroDroid OCR JSON 陣列' }, 400);
+        }
+        if (!Array.isArray(raw) || raw.length === 0 || raw.length > 1000 || raw.some((item) => typeof item !== 'string')) {
+          return json({ error: 'OCR 內容必須是 1 至 1,000 筆文字陣列' }, 400);
+        }
+        const ocrText = raw.map(clean).filter(Boolean).join(' ');
+        if (!ocrText) return json({ error: '沒有辨識到可收藏的文字' }, 400);
+        return createCapturedCard(
+          env,
+          { ocr_text: ocrText, platform: 'Android', capture_method: 'android_floating' },
+          url.origin,
+        );
+      }
+      if (url.pathname === '/api/capture' || url.pathname === '/api/capture/android') {
+        return json({ error: 'Method not allowed' }, 405);
+      }
 
       if (request.method === 'GET' && url.pathname === '/api/cards') {
         const q = clean(url.searchParams.get('q'));

@@ -40,6 +40,7 @@ AICARD 是一個部署在 Cloudflare Workers 的卡片式情報、人物與商�
 | GET | `/api/cards` | 卡片列表、搜尋與篩選 |
 | POST | `/api/cards` | 建立卡片 |
 | POST | `/api/capture` | iPhone 分享表單／OCR 快速收集 |
+| POST | `/api/capture/android` | Android 浮動按鈕 OCR 陣列收集 |
 | GET | `/api/cards/:id` | 取得單一卡片 |
 | PATCH | `/api/cards/:id` | 更新狀態、標題或重要原因 |
 | DELETE | `/api/cards/:id` | 刪除卡片 |
@@ -115,7 +116,7 @@ curl https://你的-worker.workers.dev/api/health
 預期結果：
 
 ```json
-{"ok":true,"service":"AICARD","version":"0.4.0"}
+{"ok":true,"service":"AICARD","version":"0.5.1"}
 ```
 
 ## 專案結構
