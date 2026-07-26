@@ -16,13 +16,14 @@ export const iphonePage = `<!doctype html>
     label{display:block;font-size:13px;font-weight:750;margin:12px 0 5px}textarea,input,select{width:100%;border:1px solid #cbd5e1;border-radius:11px;padding:12px;font:inherit;background:#fff}
     textarea{min-height:130px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.step{display:flex;gap:12px;margin:14px 0}.num{flex:0 0 28px;height:28px;border-radius:50%;background:#111827;color:#fff;text-align:center;line-height:28px;font-weight:800}
     code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f1f5f9;padding:2px 5px;border-radius:6px;overflow-wrap:anywhere}
-    .ok{color:#166534}.error{color:#991b1b}.result{display:none;margin-top:12px;padding:12px;border-radius:11px;background:#f8fafc}.note{border-left:3px solid #6366f1;padding-left:12px}.endpoint{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f8fafc}.feedback{min-height:24px;margin-top:8px;font-size:14px}
+    .ok{color:#166534}.error{color:#991b1b}.result{display:none;margin-top:12px;padding:12px;border-radius:11px;background:#f8fafc}.note{border-left:3px solid #6366f1;padding-left:12px}.endpoint{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:#f8fafc}.feedback{min-height:24px;margin-top:8px;font-size:14px}.setup{margin-top:14px;padding:16px;border:2px solid #6366f1;border-radius:14px;background:#f5f3ff}.setup[hidden]{display:none}.setup h3{margin-top:0}.connection{display:flex;align-items:center;justify-content:space-between;gap:12px}.connection strong{display:block}.successBox{border:2px solid #22c55e;background:#f0fdf4;font-size:16px}.successMark{font-size:28px;display:block}.wide{width:100%}
   </style>
 </head>
 <body><main class="wrap">
   <nav class="bar"><strong>AICARD · iPhone</strong><a class="btn secondary" href="/">返回卡片庫</a></nav>
   <h1>觀看社群時，一鍵收集</h1>
   <p class="muted">支援「分享表單」與「背面輕點截圖 OCR」。只傳文字、網址與備註到 AICARD，不上傳截圖。</p>
+  <section class="panel connection"><div><strong>收集服務狀態</strong><span id="connectionStatus" class="muted" role="status">正在確認…</span></div><button type="button" id="testConnection" class="btn secondary">重新測試</button></section>
 
   <section class="panel">
     <h2>先測試收集端</h2>
@@ -45,8 +46,20 @@ export const iphonePage = `<!doctype html>
     <div class="step"><span class="num">3</span><div>加入「取得 URL 的內容」，網址使用下面端點，方法選 <strong>POST</strong>，要求本文選 <strong>JSON</strong>。</div></div>
     <label for="endpoint">API 端點</label>
     <input id="endpoint" class="endpoint" readonly>
-    <div class="actions"><button type="button" class="btn copy" id="copyEndpoint">複製 API 端點</button><a class="btn primary" href="shortcuts://create-shortcut">打開捷徑並新增</a></div>
+    <div class="actions"><button type="button" class="btn copy" id="copyEndpoint">複製 API 端點</button><button type="button" class="btn primary" id="startSetup">開始設定捷徑</button></div>
     <div id="copyStatus" class="feedback" role="status" aria-live="polite"></div>
+    <div id="setupGuide" class="setup" hidden>
+      <h3>設定畫面已開啟</h3>
+      <p><strong>先不要離開這頁。</strong>請先複製上面的 API 端點，再按下面按鈕開啟捷徑。</p>
+      <ol>
+        <li>在新捷徑加入「取得 URL 的內容」。</li>
+        <li>貼上 API 端點，方法選 POST，本文選 JSON。</li>
+        <li>加入欄位 <code>text</code>＝捷徑輸入、<code>capture_method</code>＝<code>share_sheet</code>。</li>
+        <li>最後一定加入「顯示結果」，內容選「取得 URL 的內容」；成功時才會在手機顯示結果。</li>
+      </ol>
+      <a id="openShortcuts" class="btn primary wide" href="shortcuts://create-shortcut">我已複製，現在開啟捷徑 App</a>
+      <div id="openStatus" class="feedback" role="status" aria-live="polite"></div>
+    </div>
     <h3>JSON 欄位</h3>
     <p><code>text</code>＝捷徑輸入、<code>url</code>＝從捷徑輸入取得的 URL、<code>note</code>＝詢問結果、<code>capture_method</code>＝<code>share_sheet</code>。</p>
     <div class="step"><span class="num">4</span><div>加入「顯示通知」，內容使用 API 回傳的 <code>title</code>。之後在 Facebook、Threads、Safari 等 App 點「分享」即可收集。</div></div>
@@ -64,7 +77,21 @@ export const iphonePage = `<!doctype html>
 const result=document.getElementById('result');
 const endpointField=document.getElementById('endpoint');
 const copyStatus=document.getElementById('copyStatus');
+const connectionStatus=document.getElementById('connectionStatus');
 endpointField.value=location.origin+'/api/capture';
+async function testConnection(){
+  connectionStatus.className='muted';connectionStatus.textContent='正在確認…';
+  try{
+    const response=await fetch('/api/health',{cache:'no-store'});
+    const data=await response.json();
+    if(!response.ok||!data.ok)throw new Error('service unavailable');
+    connectionStatus.className='ok';connectionStatus.textContent='● 正常，可接收收藏（版本 '+data.version+'）';
+  }catch{
+    connectionStatus.className='error';connectionStatus.textContent='● 無法連線，請改用 Safari 後重試';
+  }
+}
+document.getElementById('testConnection').addEventListener('click',testConnection);
+testConnection();
 document.getElementById('copyEndpoint').addEventListener('click',async event=>{
   const button=event.currentTarget;
   copyStatus.className='feedback';
@@ -85,6 +112,21 @@ document.getElementById('copyEndpoint').addEventListener('click',async event=>{
     copyStatus.textContent='iPhone 未允許自動複製，網址已反白；請長按後選「拷貝」。';
   }
 });
+document.getElementById('startSetup').addEventListener('click',()=>{
+  const guide=document.getElementById('setupGuide');
+  guide.hidden=false;
+  guide.scrollIntoView({behavior:'smooth',block:'center'});
+  document.getElementById('openStatus').textContent='已顯示設定步驟；完成複製後再開啟捷徑 App。';
+});
+document.getElementById('openShortcuts').addEventListener('click',()=>{
+  const status=document.getElementById('openStatus');
+  status.className='feedback';
+  status.textContent='正在要求 iPhone 開啟捷徑 App…';
+  setTimeout(()=>{
+    status.className='feedback error';
+    status.textContent='若沒有跳到捷徑 App，代表目前是 LINE／Facebook 內建瀏覽器；請用 Safari 開啟本頁。';
+  },1200);
+});
 document.getElementById('send').addEventListener('click',async()=>{
   const button=document.getElementById('send');
   const body={text:document.getElementById('text').value.trim(),url:document.getElementById('url').value.trim(),platform:document.getElementById('platform').value,note:document.getElementById('note').value.trim(),capture_method:'iphone_web'};
@@ -93,9 +135,13 @@ document.getElementById('send').addEventListener('click',async()=>{
     const response=await fetch('/api/capture',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});
     const data=await response.json();
     if(!response.ok)throw new Error(data.error||'收集失敗');
-    result.className='result ok';
-    result.innerHTML='已收進：<strong></strong> · <a href="'+encodeURI(data.card_url)+'">查看卡片</a>';
-    result.querySelector('strong').textContent=data.title;
+    result.className='result successBox ok';
+    result.textContent='';
+    const mark=document.createElement('span');mark.className='successMark';mark.textContent='✅';
+    const title=document.createElement('strong');title.textContent='收藏成功：'+data.title;
+    const br=document.createElement('br');
+    const link=document.createElement('a');link.href=data.card_url;link.textContent='立即查看這張卡片';
+    result.append(mark,title,br,link);
     document.getElementById('text').value='';document.getElementById('url').value='';document.getElementById('note').value='';
   }catch(error){result.className='result error';result.textContent=error instanceof Error?error.message:'收集失敗'}
   finally{button.disabled=false;button.textContent='收進 AICARD'}
