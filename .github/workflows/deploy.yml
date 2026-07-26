@@ -27,7 +27,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: TypeScript check
         run: npm run typecheck
@@ -36,34 +36,15 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || (echo "Missing CLOUDFLARE_API_TOKEN" && exit 1)
           test -n "$CLOUDFLARE_ACCOUNT_ID" || (echo "Missing CLOUDFLARE_ACCOUNT_ID" && exit 1)
-          test -n "$D1_DATABASE_ID" || (echo "Missing D1_DATABASE_ID" && exit 1)
-
-      - name: Configure D1 binding
-        env:
-          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
-        run: |
-          python - <<'PY'
-          import os
-          from pathlib import Path
-
-          path = Path("wrangler.toml")
-          text = path.read_text(encoding="utf-8")
-          placeholder = "REPLACE_WITH_D1_DATABASE_ID"
-          database_id = os.environ["D1_DATABASE_ID"].strip()
-          if placeholder not in text:
-              raise SystemExit("D1 placeholder not found in wrangler.toml")
-          path.write_text(text.replace(placeholder, database_id), encoding="utf-8")
-          PY
 
       - name: Apply D1 migrations and deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4.26.0"
+          wranglerVersion: "4.114.0"
           preCommands: wrangler d1 migrations apply aicard-db --remote
           command: deploy

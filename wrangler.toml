@@ -8,5 +8,5 @@ binding = "AI"
 [[d1_databases]]
 binding = "DB"
 database_name = "aicard-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "44001907-02f8-444b-8b5d-7311520da296"
 migrations_dir = "migrations"

@@ -87,21 +87,19 @@ npm run deploy
 
 1. 安裝依賴
 2. 執行 TypeScript 型別檢查
-3. 將 D1 Database ID 寫入暫存的 `wrangler.toml`
-4. 套用遠端 D1 migrations
-5. 部署 Cloudflare Worker
+3. 套用遠端 D1 migrations
+4. 部署 Cloudflare Worker
 
 請在 GitHub Repository：
 
 `Settings → Secrets and variables → Actions → New repository secret`
 
-加入以下三個 secrets：
+加入以下兩個 secrets：
 
 | Secret | 說明 |
 |---|---|
 | `CLOUDFLARE_API_TOKEN` | 具備 Workers 部署及 D1 編輯權限的 Cloudflare API Token |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Account ID |
-| `D1_DATABASE_ID` | `aicard-db` 的 Database ID |
 
 未設定上述 secrets 時，自動部署會明確失敗並顯示缺少哪一項，不會產生不完整部署。
 
