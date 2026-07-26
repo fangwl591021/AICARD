@@ -115,7 +115,7 @@ curl https://你的-worker.workers.dev/api/health
 預期結果：
 
 ```json
-{"ok":true,"service":"AICARD","version":"0.3.1"}
+{"ok":true,"service":"AICARD","version":"0.4.0"}
 ```
 
 ## 專案結構
